@@ -1,0 +1,3 @@
+# One group per line
+SG-Sample-App-Readers
+SG-Sample-App-Editors

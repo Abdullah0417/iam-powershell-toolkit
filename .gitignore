@@ -1,0 +1,18 @@
+# Local output and potentially sensitive exports
+Output/
+Reports/
+Snapshots/
+/*.csv
+/*.json
+*.log
+*.transcript
+*.cred
+*.pfx
+*.pem
+*.key
+*.bak
+*.tmp
+.env
+.cache/
+__pycache__/
+.DS_Store
