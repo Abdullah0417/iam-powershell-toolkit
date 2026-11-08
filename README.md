@@ -1,6 +1,6 @@
 # IAM PowerShell Toolkit
 
-Seven commands for Active Directory reports, CSV membership and group requests, owner changes, and a read-only Microsoft Entra ID membership report. This portfolio uses standard AD cmdlets and plain CSV files for lab use and code review.
+PowerShell commands for reviewing Active Directory group access, processing CSV membership changes, creating security groups, and updating group owners. The Microsoft Graph command reports direct Entra ID group membership.
 
 ## What's included
 
@@ -56,7 +56,9 @@ Invoke-IamMembershipCsv -Path .\Examples\membership.csv -Server 'corp.example.co
     -ReportPath .\membership-results.csv
 ```
 
-The membership CSV uses `GroupName`, `UserName`, and `Action` (`Add` or `Remove`). All rows are validated before writing; repeated group/user pairs are rejected, including aliases for the same objects. Only security groups are supported, and disabled users cannot be added. A write or verification failure stops the batch. Earlier changes are not rolled back; check AD before retrying.
+The membership CSV uses `GroupName`, `UserName`, and `Action` (`Add` or `Remove`). All rows are validated before writing. Repeated group/user pairs are rejected, including aliases for the same objects. Only security groups are supported, and disabled users cannot be added.
+
+A write or verification failure stops the batch. Earlier changes are not rolled back; check AD before retrying.
 
 Bulk group creation:
 
@@ -74,13 +76,15 @@ New-IamADGroupsFromCsv -Path .\Examples\new-groups.csv -TargetOU $ou `
     -TicketCommentsPath .\ticket-comments.csv
 ```
 
-The creation CSV uses `GroupName`, `Description`, `PrimaryOwner`, `SecondaryOwner`, and `Members`. Optional columns are `TicketNumber` and `GroupScope` (default `Universal`). Put several members in one cell separated by semicolons. Owner/member values should be **sAMAccountNames** resolvable on the selected server.
+The creation CSV uses `GroupName`, `Description`, `PrimaryOwner`, `SecondaryOwner`, and `Members`. Optional columns are `TicketNumber` and `GroupScope` (default `Universal`). Separate multiple members with semicolons. Use **sAMAccountNames** for owners and members, resolvable on the selected server.
 
 - `ManagedBy` stores the primary owner.
-- The secondary owner's DN goes into `extensionAttribute12` by default; `extensionAttribute1` through `extensionAttribute15` are accepted. The attribute must exist on groups and be reserved for this use. This is a lab convention, not a native AD secondary-owner relationship. Neither owner field grants membership-management rights.
+- The secondary owner's DN goes into `extensionAttribute12` by default. You can select another attribute from `extensionAttribute1` through `extensionAttribute15`; it must exist on groups and be reserved for this use.
 - New groups receive ticket numbers in the AD `info` attribute when provided.
 - The ticket comments CSV contains only successfully created and verified groups. Requested CSV outputs are overwritten; when there are no rows, the file is empty without headers.
 - An error after group creation can leave a **partially created** group. The script reports `Partial` and stops further writes without deleting the group. A failed response does not prove that AD made no change; check before retrying.
+
+The secondary-owner attribute is a lab convention. AD has no native secondary-owner relationship, and neither owner field grants membership-management rights.
 
 Update an owner or save a read-only snapshot:
 
@@ -95,11 +99,15 @@ Export-IamGroupSnapshot -Path .\Examples\groups.txt -Server 'corp.example.com' `
     -OutputDirectory .\Snapshots
 ```
 
-Owner changes validate all requested groups before writing. Supply `-SecondaryOwnerAttribute` when changing a primary owner if you want to check it against the existing secondary owner; without that parameter, only `ManagedBy` is checked. A snapshot saves the group report as JSON, not a restorable AD backup.
+Owner changes validate all requested groups before writing. To check a new primary owner against the existing secondary owner, supply `-SecondaryOwnerAttribute`. Without it, only `ManagedBy` is checked.
+
+Snapshots save the group report as JSON. They cannot restore AD objects.
 
 ## Microsoft Graph / Entra ID
 
-The Graph command uses the [direct membership endpoint](https://learn.microsoft.com/en-us/graph/api/user-list-memberof?view=graph-rest-1.0) with the `microsoft.graph.group` cast. It returns direct groups, including distribution groups, rather than transitive or effective access. The cast requires `$count=true` and `ConsistencyLevel: eventual`; recent changes can take time to reach the index.
+The Graph command uses the [direct membership endpoint](https://learn.microsoft.com/en-us/graph/api/user-list-memberof?view=graph-rest-1.0) with the `microsoft.graph.group` cast. It returns direct groups, including distribution groups. It does not expand nested membership or calculate effective access.
+
+The cast requires `$count=true` and `ConsistencyLevel: eventual`; recent changes can take time to appear in results.
 
 ```powershell
 Install-Module Microsoft.Graph.Authentication -Repository PSGallery -Scope CurrentUser
@@ -113,9 +121,13 @@ Get-IamGraphGroupMembership -Path .\Examples\graph-users.csv `
 Disconnect-MgGraph
 ```
 
-Delegated [`GroupMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall) reads memberships and basic group fields and requires administrator consent. `User.Read.All` can read another user's membership relationship with limited group details. No write scopes are needed. Hidden memberships require separately authorized `Member.Read.Hidden`, so this report is not a complete entitlement audit.
+Delegated [`GroupMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall) reads memberships and basic group fields and requires administrator consent. `User.Read.All` can read another user's membership relationship with limited group details. No write scopes are needed.
 
-The command validates and follows [`@odata.nextLink`](https://learn.microsoft.com/en-us/graph/paging), sends the consistency header on every page, and leaves authentication to the Graph module. Only the public Microsoft Graph endpoint is supported. Users with no returned groups produce no rows; a Graph failure stops the report without exporting partial results.
+Hidden memberships require separately authorized `Member.Read.Hidden`. The report is not a complete entitlement audit.
+
+The command validates and follows [`@odata.nextLink`](https://learn.microsoft.com/en-us/graph/paging) and sends the consistency header on every page. Authentication uses the Graph module. Only the public Microsoft Graph endpoint is supported.
+
+Users with no returned groups produce no rows. A Graph failure stops the report without exporting partial results.
 
 ## Testing and limits
 
@@ -127,12 +139,12 @@ Import-Module Pester -RequiredVersion 5.7.1
 Invoke-Pester .\Tests\IAMToolkit.Tests.ps1
 ```
 
-GitHub Actions runs these mocked tests and PSScriptAnalyzer warning/error checks on PowerShell 7 and Windows PowerShell 5.1. The tests cover preview and `-WhatIf`, CSV validation, membership and owner changes, creation failures, snapshots, and Graph pagination. They do **not** test a live AD domain, an Entra tenant, real permissions, or replication. Before operational use, follow the disposable-lab checks in [`docs/lab-checklist.md`](docs/lab-checklist.md).
+GitHub Actions runs these mocked tests and PSScriptAnalyzer warning/error checks on PowerShell 7 and Windows PowerShell 5.1. The tests cover preview and `-WhatIf`, CSV validation, membership and owner changes, creation failures, snapshots, and Graph pagination.
+
+Live AD, Entra, permissions, and replication testing has not been performed for this project. Use the [`lab checklist`](docs/lab-checklist.md) to check behavior in a disposable environment before operational use.
 
 There is no transactional rollback, retry/backoff for Graph throttling, cross-domain provisioning, privileged-account provisioning, or group deletion. Input validation cannot prevent concurrent directory changes between planning and writing.
 
-## Notes
+## Sample data and reports
 
-Sample users, groups and tickets are fictional. Don't upload real user exports, screenshots, logs, internal names, tokens or credential files to this repository. Review organizational code ownership and publication policies before sharing code based on workplace tasks.
-
-Generated CSV/JSON may contain identity and entitlement data. Keep exports local and review them before sharing.
+Sample users, groups and tickets are fictional. Reports from your own directory can contain identity and access data; keep those exports local and out of Git.
