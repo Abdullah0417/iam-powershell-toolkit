@@ -337,7 +337,9 @@ Describe 'IAM Toolkit' {
                 $result = New-IamADGroupsFromCsv -Path $script:creationFile -TargetOU $script:ou -Server corp.example.com -Commit -TicketCommentsPath $comments
                 $result.Status | Should -Be Partial
                 $result.Message | Should -Match 'Sample metadata failure'
-                (Get-Item $comments).Length | Should -Be 0
+                # Windows PowerShell can write a UTF-8 BOM without any CSV content.
+                Get-Content -LiteralPath $comments -Raw | Should -BeNullOrEmpty
+                @(Import-Csv -LiteralPath $comments) | Should -HaveCount 0
                 Should -Invoke New-ADGroup -Times 1 -Exactly
                 Should -Invoke Add-ADGroupMember -Times 0 -Exactly
             }
