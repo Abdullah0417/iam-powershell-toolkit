@@ -4,16 +4,70 @@ Import-Module (Join-Path $PSScriptRoot '..\IAMToolkit.psm1') -Force
 Describe 'IAM Toolkit' {
     InModuleScope IAMToolkit {
         BeforeAll {
-            function script:Get-ADUser { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [CmdletBinding()] param($Identity,$Server,$Properties) throw 'Unmocked AD read' }
-            function script:Get-ADGroup { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [CmdletBinding()] param($Identity,$LDAPFilter,$Server,$Properties) throw 'Unmocked AD read' }
-            function script:Get-ADObject { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [CmdletBinding()] param($Identity,$LDAPFilter,$SearchBase,$SearchScope,$Server,$Properties) throw 'Unmocked AD read' }
-            function script:Get-ADGroupMember { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [CmdletBinding()] param($Identity,$Server) throw 'Unmocked AD read' }
-            function script:Get-ADOrganizationalUnit { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [CmdletBinding()] param($Identity,$Server) throw 'Unmocked AD read' }
-            function script:New-ADGroup { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')] [CmdletBinding()] param($Name,$SamAccountName,$Description,$GroupCategory,$GroupScope,$Path,$Server,$ManagedBy,[switch]$PassThru,[switch]$Confirm) throw 'Unmocked AD write' }
-            function script:Set-ADGroup { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')] [CmdletBinding()] param($Identity,$Server,$ManagedBy,$Replace,[switch]$Confirm) throw 'Unmocked AD write' }
-            function script:Add-ADGroupMember { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')] [CmdletBinding()] param($Identity,$Members,$Server,[switch]$Confirm) throw 'Unmocked AD write' }
-            function script:Remove-ADGroupMember { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')] [CmdletBinding()] param($Identity,$Members,$Server,[switch]$Confirm) throw 'Unmocked AD write' }
-            function script:Invoke-MgGraphRequest { [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')] [CmdletBinding()] param($Method,$Uri,$Headers) throw 'Unmocked Graph request' }
+            function script:Get-ADUser {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [CmdletBinding()]
+                param($Identity,$Server,$Properties)
+                throw 'Unmocked AD read'
+            }
+            function script:Get-ADGroup {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [CmdletBinding()]
+                param($Identity,$LDAPFilter,$Server,$Properties)
+                throw 'Unmocked AD read'
+            }
+            function script:Get-ADObject {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [CmdletBinding()]
+                param($Identity,$LDAPFilter,$SearchBase,$SearchScope,$Server,$Properties)
+                throw 'Unmocked AD read'
+            }
+            function script:Get-ADGroupMember {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [CmdletBinding()]
+                param($Identity,$Server)
+                throw 'Unmocked AD read'
+            }
+            function script:Get-ADOrganizationalUnit {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [CmdletBinding()]
+                param($Identity,$Server)
+                throw 'Unmocked AD read'
+            }
+            function script:New-ADGroup {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')]
+                [CmdletBinding()]
+                param($Name,$SamAccountName,$Description,$GroupCategory,$GroupScope,$Path,$Server,$ManagedBy,[switch]$PassThru,[switch]$Confirm)
+                throw 'Unmocked AD write'
+            }
+            function script:Set-ADGroup {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')]
+                [CmdletBinding()]
+                param($Identity,$Server,$ManagedBy,$Replace,[switch]$Confirm)
+                throw 'Unmocked AD write'
+            }
+            function script:Add-ADGroupMember {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')]
+                [CmdletBinding()]
+                param($Identity,$Members,$Server,[switch]$Confirm)
+                throw 'Unmocked AD write'
+            }
+            function script:Remove-ADGroupMember {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSupportsShouldProcess', '', Justification = 'Explicit Confirm binding counts every mocked write; no inner WhatIf can hide a call.')]
+                [CmdletBinding()]
+                param($Identity,$Members,$Server,[switch]$Confirm)
+                throw 'Unmocked AD write'
+            }
+            function script:Invoke-MgGraphRequest {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Offline stubs bind API parameters; Pester mocks supply behavior.')]
+                [CmdletBinding()]
+                param($Method,$Uri,$Headers)
+                throw 'Unmocked Graph request'
+            }
 
             function script:New-TestUser($Name) {
                 [pscustomobject]@{
@@ -283,7 +337,9 @@ Describe 'IAM Toolkit' {
                 $result = New-IamADGroupsFromCsv -Path $script:creationFile -TargetOU $script:ou -Server corp.example.com -Commit -TicketCommentsPath $comments
                 $result.Status | Should -Be Partial
                 $result.Message | Should -Match 'Sample metadata failure'
-                (Get-Item $comments).Length | Should -Be 0
+                # Windows PowerShell can write a UTF-8 BOM without any CSV content.
+                Get-Content -LiteralPath $comments -Raw | Should -BeNullOrEmpty
+                @(Import-Csv -LiteralPath $comments) | Should -HaveCount 0
                 Should -Invoke New-ADGroup -Times 1 -Exactly
                 Should -Invoke Add-ADGroupMember -Times 0 -Exactly
             }
@@ -325,6 +381,41 @@ Describe 'IAM Toolkit' {
             }
             It 'rejects the same primary and secondary account' {
                 { Set-IamGroupOwner -GroupName SG-Test -PrimaryOwner alex -SecondaryOwner alex -SecondaryOwnerAttribute extensionAttribute12 -Server corp.example.com -Commit } | Should -Throw
+                Assert-NoADWrite
+            }
+            It 'loads the existing secondary owner before rejecting a primary-only same-account change' {
+                $group = New-TestGroup SG-Test
+                $group.extensionAttribute12 = (New-TestUser alex).DistinguishedName
+                $script:groups['SG-Test'] = $group
+                {
+                    Set-IamGroupOwner -GroupName SG-Test -PrimaryOwner alex `
+                        -SecondaryOwnerAttribute extensionAttribute12 -Server corp.example.com -Commit
+                } | Should -Throw
+                Should -Invoke Get-ADGroup -Times 1 -Exactly -ParameterFilter {
+                    $Identity -eq 'SG-Test' -and 'extensionAttribute12' -in $Properties
+                }
+                Assert-NoADWrite
+            }
+            It 'rejects a later group secondary-owner conflict before any primary-owner writes' {
+                $first = New-TestGroup SG-First
+                $first.extensionAttribute12 = (New-TestUser jamie).DistinguishedName
+                $later = New-TestGroup SG-Later
+                $later.extensionAttribute12 = (New-TestUser alex).DistinguishedName
+                $script:groups['SG-First'] = $first
+                $script:groups['SG-Later'] = $later
+                {
+                    Set-IamGroupOwner -GroupName SG-First,SG-Later -PrimaryOwner alex `
+                        -SecondaryOwnerAttribute extensionAttribute12 -Server corp.example.com -Commit
+                } | Should -Throw
+                Should -Invoke Get-ADGroup -Times 2 -Exactly -ParameterFilter {
+                    'extensionAttribute12' -in $Properties
+                }
+                Assert-NoADWrite
+            }
+            It 'rejects extra fields in an owner group-list CSV before any AD writes' {
+                $file = Write-TestCsv 'owner-list.csv' @('GroupName','SG-First','SG-Later,unexpected')
+                { Set-IamGroupOwner -Path $file -PrimaryOwner alex -Server corp.example.com -Commit } |
+                    Should -Throw
                 Assert-NoADWrite
             }
             It 'reports successful, failed and unattempted owner changes without losing earlier results' {
@@ -372,6 +463,43 @@ Describe 'IAM Toolkit' {
                 @((Get-ChildItem (Join-Path $TestDrive 'collisions') -Filter '*.json')) | Should -HaveCount 2
                 (Get-Content $result[0].File -Raw | ConvertFrom-Json).GroupName | Should -Be 'SG/Test'
                 (Get-Content $result[1].File -Raw | ConvertFrom-Json).GroupName | Should -Be 'SG?Test'
+                Assert-NoADWrite
+            }
+            It 'rejects an existing file as the snapshot output directory without reporting a saved file' {
+                $outputPath = Join-Path $TestDrive 'existing-file.txt'
+                'Sample existing content' | Set-Content -LiteralPath $outputPath
+                $script:snapshotRows = @()
+                {
+                    Export-IamGroupSnapshot -GroupName SG-Test -Server corp.example.com `
+                        -OutputDirectory $outputPath -ErrorAction Continue |
+                        ForEach-Object { $script:snapshotRows += $_ }
+                } | Should -Throw
+                $script:snapshotRows | Should -HaveCount 0
+                Get-Content -LiteralPath $outputPath | Should -Be 'Sample existing content'
+                Assert-NoADWrite
+            }
+            It 'terminates a snapshot on a directory creation error without reporting a saved file' {
+                Mock New-Item { Write-Error 'Sample directory creation failure' }
+                $script:snapshotRows = @()
+                {
+                    Export-IamGroupSnapshot -GroupName SG-Test -Server corp.example.com `
+                        -OutputDirectory (Join-Path $TestDrive 'uncreated') -ErrorAction Continue |
+                        ForEach-Object { $script:snapshotRows += $_ }
+                } | Should -Throw '*Sample directory creation failure*'
+                $script:snapshotRows | Should -HaveCount 0
+                Should -Invoke New-Item -Times 1 -Exactly -ParameterFilter { $ErrorAction -eq 'Stop' }
+                Assert-NoADWrite
+            }
+            It 'terminates a snapshot on a JSON write error without reporting a saved file' {
+                Mock Set-Content { Write-Error 'Sample snapshot write failure' }
+                $script:snapshotRows = @()
+                {
+                    Export-IamGroupSnapshot -GroupName SG-Test -Server corp.example.com `
+                        -OutputDirectory $TestDrive -ErrorAction Continue |
+                        ForEach-Object { $script:snapshotRows += $_ }
+                } | Should -Throw '*Sample snapshot write failure*'
+                $script:snapshotRows | Should -HaveCount 0
+                Should -Invoke Set-Content -Times 1 -Exactly -ParameterFilter { $ErrorAction -eq 'Stop' }
                 Assert-NoADWrite
             }
         }

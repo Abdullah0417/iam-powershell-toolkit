@@ -14,13 +14,13 @@ Seven commands for Active Directory reports, CSV membership and group requests, 
 | `Export-IamGroupSnapshot` | Save a read-only JSON report of existing group information |
 | `Get-IamGraphGroupMembership` | Read direct Entra ID group membership using Microsoft Graph |
 
-The Graph report is **read-only**. Every AD write requires `-Commit`; write commands preview by default. Use `-Commit -WhatIf` to show the planned AD operations without applying them. `-Confirm` and PowerShell's confirmation preferences still apply to the outer command. Preview and `-WhatIf` still query AD, and requested local reports may be written.
+Every AD write requires `-Commit`; write commands preview by default. Use `-Commit -WhatIf` to show planned operations without applying them. Preview still queries AD and can save local reports. The Graph report only reads data.
 
 ## Requirements
 
 - Windows PowerShell 5.1 or PowerShell 7+ on Windows for AD commands.
 - RSAT Active Directory PowerShell module and permission to query the domain. Changes require corresponding AD permissions.
-- A single AD domain/server for these examples. The public version does **not** implement cross-domain provisioning or a hybrid sync workflow.
+- One AD domain/server per run.
 - For the Graph command: `Microsoft.Graph.Authentication`, an authorized work/school account, and appropriate tenant consent.
 
 ```powershell
@@ -56,7 +56,7 @@ Invoke-IamMembershipCsv -Path .\Examples\membership.csv -Server 'corp.example.co
     -ReportPath .\membership-results.csv
 ```
 
-The membership CSV uses `GroupName`, `UserName`, and `Action` (`Add` or `Remove`). All rows are validated and resolved before writing; repeated group/user pairs are rejected, including aliases resolving to the same objects. Only security groups are supported, and adding a disabled user is rejected. A write or read-back failure stops further AD writes. Earlier changes are not rolled back; inspect AD before retrying a failed request.
+The membership CSV uses `GroupName`, `UserName`, and `Action` (`Add` or `Remove`). All rows are validated before writing; repeated group/user pairs are rejected, including aliases for the same objects. Only security groups are supported, and disabled users cannot be added. A write or verification failure stops the batch. Earlier changes are not rolled back; check AD before retrying.
 
 Bulk group creation:
 
@@ -77,10 +77,10 @@ New-IamADGroupsFromCsv -Path .\Examples\new-groups.csv -TargetOU $ou `
 The creation CSV uses `GroupName`, `Description`, `PrimaryOwner`, `SecondaryOwner`, and `Members`. Optional columns are `TicketNumber` and `GroupScope` (default `Universal`). Put several members in one cell separated by semicolons. Owner/member values should be **sAMAccountNames** resolvable on the selected server.
 
 - `ManagedBy` stores the primary owner.
-- The secondary owner's DN goes into `extensionAttribute12` by default. This requires that attribute to exist in your AD schema and be available on groups; `extensionAttribute1` through `extensionAttribute15` are accepted. These fields are a lab convention, not a standard AD secondary-owner relationship, and may already have another purpose in your directory. Setting either owner does not grant permission to manage group membership.
+- The secondary owner's DN goes into `extensionAttribute12` by default; `extensionAttribute1` through `extensionAttribute15` are accepted. The attribute must exist on groups and be reserved for this use. This is a lab convention, not a native AD secondary-owner relationship. Neither owner field grants membership-management rights.
 - New groups receive ticket numbers in the AD `info` attribute when provided.
-- The ticket comments CSV contains only groups whose creation and verification succeeded. Use a fresh output path for each run.
-- An error after group creation may leave a **partially created** group. The script reports `Partial`, stops further writes, and does not automatically delete the group. A failed creation request can also have an uncertain server-side outcome; check AD before retrying.
+- The ticket comments CSV contains only successfully created and verified groups. Requested CSV outputs are overwritten; when there are no rows, the file is empty without headers.
+- An error after group creation can leave a **partially created** group. The script reports `Partial` and stops further writes without deleting the group. A failed response does not prove that AD made no change; check before retrying.
 
 Update an owner or save a read-only snapshot:
 
@@ -95,7 +95,7 @@ Export-IamGroupSnapshot -Path .\Examples\groups.txt -Server 'corp.example.com' `
     -OutputDirectory .\Snapshots
 ```
 
-Owner changes resolve all requested groups before writes. A snapshot contains the same name-based summary as the group report; it is not a backup or a restore mechanism.
+Owner changes validate all requested groups before writing. Supply `-SecondaryOwnerAttribute` when changing a primary owner if you want to check it against the existing secondary owner; without that parameter, only `ManagedBy` is checked. A snapshot saves the group report as JSON, not a restorable AD backup.
 
 ## Microsoft Graph / Entra ID
 
@@ -113,21 +113,21 @@ Get-IamGraphGroupMembership -Path .\Examples\graph-users.csv `
 Disconnect-MgGraph
 ```
 
-The example uses delegated [`GroupMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall), which supports reading this membership relationship and basic group fields. It requires administrator consent. The endpoint documents `User.Read.All` as the least delegated permission for another user's membership relationship; with insufficient permission for group properties, Graph can return IDs with other fields null. Broad directory permissions, `Group.Read.All`, and write scopes are not needed for this report. Hidden memberships require separately authorized `Member.Read.Hidden`; the example does not request it, so do not treat the result as a complete entitlement audit.
+Delegated [`GroupMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall) reads memberships and basic group fields and requires administrator consent. `User.Read.All` can read another user's membership relationship with limited group details. No write scopes are needed. Hidden memberships require separately authorized `Member.Read.Hidden`, so this report is not a complete entitlement audit.
 
-The command follows the entire [`@odata.nextLink`](https://learn.microsoft.com/en-us/graph/paging) URL after validating it, and sends the consistency header on every page. It only makes GET requests and leaves authentication to `Microsoft.Graph.Authentication`. The example targets the public Microsoft Graph endpoint; national cloud endpoints are not supported. Users with no returned groups produce no report rows. Graph failures terminate the report rather than exporting a partial result.
+The command validates and follows [`@odata.nextLink`](https://learn.microsoft.com/en-us/graph/paging), sends the consistency header on every page, and leaves authentication to the Graph module. Only the public Microsoft Graph endpoint is supported. Users with no returned groups produce no rows; a Graph failure stops the report without exporting partial results.
 
 ## Testing and limits
 
 `Tests/IAMToolkit.Tests.ps1` uses Pester 5 and mocked AD/Graph commands. Run from the repository root in a fresh PowerShell session:
 
 ```powershell
-Install-Module Pester -MinimumVersion 5.0 -Repository PSGallery -Scope CurrentUser
-Import-Module Pester -MinimumVersion 5.0
+Install-Module Pester -RequiredVersion 5.7.1 -Repository PSGallery -Scope CurrentUser
+Import-Module Pester -RequiredVersion 5.7.1
 Invoke-Pester .\Tests\IAMToolkit.Tests.ps1
 ```
 
-The tests exercise preview and `-WhatIf`, CSV validation, membership and owner changes, creation failures, and Graph pagination without a real directory or tenant. They do **not** establish live AD/Graph compatibility, permissions, schema configuration, or replication behavior. Before using a write command, test with disposable lab users and groups, including failed writes and partial creation. See [`docs/lab-checklist.md`](docs/lab-checklist.md).
+GitHub Actions runs these mocked tests and PSScriptAnalyzer warning/error checks on PowerShell 7 and Windows PowerShell 5.1. The tests cover preview and `-WhatIf`, CSV validation, membership and owner changes, creation failures, snapshots, and Graph pagination. They do **not** test a live AD domain, an Entra tenant, real permissions, or replication. Before operational use, follow the disposable-lab checks in [`docs/lab-checklist.md`](docs/lab-checklist.md).
 
 There is no transactional rollback, retry/backoff for Graph throttling, cross-domain provisioning, privileged-account provisioning, or group deletion. Input validation cannot prevent concurrent directory changes between planning and writing.
 
