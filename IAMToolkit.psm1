@@ -29,10 +29,7 @@ function Read-IamNameInput {
             $Names = @(Get-Content -LiteralPath $Path -ErrorAction Stop)
         }
         elseif ($extension -eq '.csv') {
-            $rows = @(Import-Csv -LiteralPath $Path -ErrorAction Stop)
-            if ($rows.Count -eq 0 -or $ColumnName -notin $rows[0].PSObject.Properties.Name) {
-                throw "CSV must have a '$ColumnName' column and at least one row."
-            }
+            $rows = @(Import-IamRequestCsv -Path $Path -RequiredColumns @($ColumnName))
             $Names = @($rows | ForEach-Object { $_.$ColumnName })
         }
         else {
@@ -430,7 +427,7 @@ function Set-IamGroupOwner {
     }
 
     $properties = @('ManagedBy')
-    if ($secondary) {
+    if ($SecondaryOwnerAttribute) {
         Assert-IamSecondaryOwnerAttribute -Attribute $SecondaryOwnerAttribute -Server $Server
         $properties += $SecondaryOwnerAttribute
     }
@@ -438,7 +435,11 @@ function Set-IamGroupOwner {
     $groups = foreach ($name in $names) {
         $group = Get-IamADGroup -Identity $name -Server $Server -Properties $properties
         $effectivePrimary = if ($primary) { $primary.DistinguishedName } else { $group.ManagedBy }
-        if ($secondary -and $effectivePrimary -ieq $secondary.DistinguishedName) {
+        $effectiveSecondary = if ($secondary) {
+            $secondary.DistinguishedName
+        }
+        elseif ($SecondaryOwnerAttribute) { $group.$SecondaryOwnerAttribute }
+        if ($effectivePrimary -and $effectiveSecondary -and $effectivePrimary -ieq $effectiveSecondary) {
             throw "Primary and secondary owners cannot be the same account for '$($group.Name)'."
         }
         if (-not $seenGroups.ContainsKey($group.DistinguishedName)) {
@@ -703,15 +704,20 @@ function Export-IamGroupSnapshot {
     )
 
     $groups = @(Get-IamADGroupReport -GroupName $GroupName -Path $Path -Server $Server)
-    if (-not (Test-Path -LiteralPath $OutputDirectory)) {
-        $null = New-Item -ItemType Directory -Path $OutputDirectory -Force
+    if (Test-Path -LiteralPath $OutputDirectory) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory -PathType Container)) {
+            throw 'OutputDirectory must be a directory.'
+        }
+    }
+    else {
+        $null = New-Item -ItemType Directory -Path $OutputDirectory -Force -ErrorAction Stop
     }
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     foreach ($group in $groups) {
         $safeName = $group.GroupName -replace '[^A-Za-z0-9._-]', '_'
         $suffix = [Guid]::NewGuid().ToString('N')
         $output = Join-Path $OutputDirectory "$safeName-$stamp-$suffix.json"
-        $group | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $output -Encoding UTF8
+        $group | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $output -Encoding UTF8 -ErrorAction Stop
         [PSCustomObject]@{ GroupName = $group.GroupName; File = $output }
     }
 }
